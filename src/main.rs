@@ -1,6 +1,9 @@
 #![no_std]
 #![no_main]
 
+pub mod characters;
+pub mod overworld;
+
 use panic_halt as _;
 use ufmt::uWrite;
 

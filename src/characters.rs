@@ -1,93 +1,72 @@
-pub const SPECIAL_CHARACTERS: [[u8; 8]; 7] = [
-    PLAYER,
-    DIAMOND,
-    HEART,
-    SPADE,
-    CLUB,
-    TOP_SQUARE,
-    BOTTOM_SQUARE,
-];
+pub const CHARACTERS: [[u8; 8]; 8] =
+    parse_characters(include_bytes!("../resources/characters.txt"));
 
-#[rustfmt::skip]
-pub const PLAYER: [u8; 8] = [
-    0b00100,
-    0b01010,
-    0b00000,
-    0b11011,
-    0b10001,
-    0b10101,
-    0b01010,
-    0b01010,
-];
+pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u8; 8]; N] {
+    let mut characters = [[0u8; 8]; N];
+    let mut i = 0;
 
-#[rustfmt::skip]
-pub const DIAMOND: [u8; 8] = [
-    0b00000,
-    0b00000,
-    0b00100,
-    0b01110,
-    0b11111,
-    0b01110,
-    0b00100,
-    0b00000,
-];
+    let mut character = 0;
 
-#[rustfmt::skip]
-pub const HEART: [u8; 8] = [
-    0b00000,
-    0b00000,
-    0b01010,
-    0b11111,
-    0b11111,
-    0b01110,
-    0b00100,
-    0b00000,
-];
+    while i < file.len() {
+        // Skip label
+        loop {
+            let byte = file[i];
+            if byte == b'\n' {
+                assert!(file[i - 1] == b':', "Line must end with a `:`");
 
-#[rustfmt::skip]
-pub const SPADE: [u8; 8] = [
-    0b00000,
-    0b00100,
-    0b01110,
-    0b11111,
-    0b11111,
-    0b00100,
-    0b01110,
-    0b00000,
-];
+                i += 1;
+                break;
+            }
+            i += 1;
+        }
 
-#[rustfmt::skip]
-pub const CLUB: [u8; 8] = [
-    0b00000,
-    0b01110,
-    0b01110,
-    0b10101,
-    0b11111,
-    0b00100,
-    0b01110,
-    0b00000,
-];
+        // Read character
+        let mut line_number = 0;
+        while line_number < 8 {
+            assert!(file[i] == b'|', "Line must start with a `|`");
+            i += 1;
 
-#[rustfmt::skip]
-pub const TOP_SQUARE: [u8; 8] = [
-    0b11111,
-    0b11111,
-    0b11111,
-    0b11111,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00000,
-];
+            // Read line
+            let mut line = 0u8;
+            let mut length = 0;
 
-#[rustfmt::skip]
-pub const BOTTOM_SQUARE: [u8; 8] = [
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b11111,
-    0b11111,
-    0b11111,
-    0b11111,
-];
+            loop {
+                let byte = file[i];
+
+                match byte {
+                    b' ' => {
+                        line <<= 1;
+                    }
+                    b'#' => {
+                        line <<= 1;
+                        line |= 1;
+                    }
+                    _ => break,
+                }
+
+                i += 1;
+                length += 1;
+            }
+            assert!(
+                length == 5,
+                "Line must contain 5 characters between the `|`s"
+            );
+
+            assert!(file[i] == b'|', "Line must end with a `|`");
+            i += 1;
+            assert!(
+                i >= file.len() || file[i] == b'\n',
+                "Line must end with a `|`"
+            );
+            i += 1;
+
+            characters[character][line_number] = line;
+
+            line_number += 1;
+        }
+
+        character += 1;
+    }
+
+    characters
+}
