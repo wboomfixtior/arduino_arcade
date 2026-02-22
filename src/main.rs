@@ -7,10 +7,13 @@ pub mod input;
 pub mod lcd;
 pub mod time;
 
-use arduino_hal::hal::port::{PB2, PB3, PB4, PD2, PD3, PD4, PD5};
+use arduino_hal::{
+    hal::port::{PB2, PB3, PB4, PD2, PD3, PD4, PD5},
+    prelude::_unwrap_infallible_UnwrapInfallible,
+};
 use avr_device::interrupt;
 use panic_halt as _;
-use ufmt::uWrite;
+use ufmt::uwriteln;
 
 use crate::{
     game::Game,
@@ -90,7 +93,8 @@ fn main() -> ! {
         if elapsed < frame_time {
             arduino_hal::delay_ms(frame_time - elapsed);
         } else {
-            serial.write_str("Frame too long").unwrap();
+            uwriteln!(serial, "Frame too long ({}ms > {}ms)", elapsed, frame_time)
+                .unwrap_infallible();
         }
     }
 }
