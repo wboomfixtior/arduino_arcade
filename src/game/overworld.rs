@@ -87,6 +87,10 @@ impl Overworld {
             _ => (),
         }
 
+        if new_position == self.player_position {
+            return None;
+        }
+
         let target = self.get_tile_at(new_position);
         if target != b' ' {
             return Some(target);
