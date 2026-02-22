@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(abi_avr_interrupt)]
 
+pub mod black_jack;
 pub mod game;
 pub mod input;
 pub mod lcd;
