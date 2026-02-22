@@ -1,4 +1,7 @@
-use arduino_hal::port::PinOps;
+use core::convert::Infallible;
+
+use arduino_hal::{port::PinOps, prelude::_unwrap_infallible_UnwrapInfallible};
+use ufmt::{uDisplay, uWrite, uwrite};
 
 use crate::lcd::LCD;
 
@@ -11,16 +14,14 @@ impl<RS: PinOps, RW: PinOps, E: PinOps, D4: PinOps, D5: PinOps, D6: PinOps, D7: 
         }
     }
 
-    pub fn print(&mut self, value: impl Display) {
-        let _ = write!(self.fmt(), "{value}");
+    pub fn print(&mut self, value: impl uDisplay) {
+        uwrite!(self.fmt(), "{}", value).unwrap_infallible();
     }
 
     pub fn fmt(&'_ mut self) -> FnWriter<impl FnMut(u8) + '_> {
         FnWriter::new(|byte| self.write(byte))
     }
 }
-
-use core::fmt::{self, Display, Write};
 
 #[derive(Debug)]
 pub struct FnWriter<F: FnMut(u8)> {
@@ -33,8 +34,10 @@ impl<F: FnMut(u8)> FnWriter<F> {
     }
 }
 
-impl<F: FnMut(u8)> Write for FnWriter<F> {
-    fn write_str(&mut self, string: &str) -> fmt::Result {
+impl<F: FnMut(u8)> uWrite for FnWriter<F> {
+    type Error = Infallible;
+
+    fn write_str(&mut self, string: &str) -> Result<(), Self::Error> {
         for byte in string.bytes() {
             (self.function)(byte);
         }
