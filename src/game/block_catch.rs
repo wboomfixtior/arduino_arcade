@@ -6,17 +6,37 @@ use crate::{
 };
 
 pub struct BlockCatch {
-    pub player_position: Position,
+    pub player_position: Option<Position>,
     pub blocks: [Option<Block>; 8],
+
+    pub block_motion_timer: u8,
+    pub block_spawn_timer: u8,
+
+    pub max_block_spawn_time: u8,
+    pub difficulty_timer: u8,
 }
 
 impl Default for BlockCatch {
     fn default() -> Self {
         Self {
-            player_position: Position::new(0, 0),
+            player_position: Some(Position::new(0, 0)),
             blocks: [None; 8],
+
+            block_motion_timer: 0,
+            block_spawn_timer: 0,
+
+            max_block_spawn_time: Self::INITIAL_MAX_BLOCK_SPAWN_TIME,
+            difficulty_timer: Self::MAX_DIFFICULTY_TIME,
         }
     }
+}
+
+impl BlockCatch {
+    pub const MAX_BLOCK_MOTION_TIME: u8 = 30;
+    pub const MAX_DIFFICULTY_TIME: u8 = 60;
+    pub const INITIAL_MAX_BLOCK_SPAWN_TIME: u8 = 5;
+
+    pub const GAME_OVER_TIME: u8 = 150;
 }
 
 #[derive(Copy, Clone)]
@@ -52,18 +72,24 @@ impl BlockCatch {
     pub fn draw_full_screen(&mut self, lcd: &mut LCD) {
         lcd.clear();
 
-        lcd.set_cursor(self.player_position);
-        lcd.write(Self::PLAYER_CHARACTER);
+        if let Some(position) = self.player_position {
+            lcd.set_cursor(position);
+            lcd.write(Self::PLAYER_CHARACTER);
+        }
 
         let mut first = true;
 
         for (i, block) in self.blocks.iter().enumerate() {
             let Some(block) = block else { continue };
 
-            block.draw_at(lcd, i as u8);
+            if i == 0 {
+                block.draw_at(lcd, i as u8, self.player_position);
+            } else {
+                block.draw_at(lcd, i as u8, None);
 
-            if first && i != 0 {
-                block.draw_guide_at(lcd, 0, Some(self.player_position));
+                if first && i != 0 {
+                    block.draw_guide_at(lcd, 0, self.player_position);
+                }
             }
 
             first = false;
@@ -72,6 +98,47 @@ impl BlockCatch {
 
     pub fn update(&mut self, lcd: &mut LCD, raw_input: [i8; 2]) -> Option<GameMode> {
         self.move_player_by(lcd, raw_input);
+
+        self.block_motion_timer = self.block_motion_timer.saturating_sub(1);
+        if self.block_motion_timer == 0 {
+            let Some(player_position) = self.player_position else {
+                return Some(GameMode::Overworld);
+            };
+
+            self.block_motion_timer = Self::MAX_BLOCK_MOTION_TIME;
+
+            for i in 0..self.blocks.len() {
+                self.blocks[i] = self.blocks.get(i + 1).copied().flatten();
+            }
+
+            self.block_spawn_timer = self.block_spawn_timer.saturating_sub(1);
+            if self.block_spawn_timer == 0 {
+                self.block_spawn_timer = self.max_block_spawn_time;
+
+                self.blocks[self.blocks.len() - 1] = Some(Block::random(1..4, 4));
+            }
+
+            self.difficulty_timer = self.difficulty_timer.saturating_sub(1);
+            if self.difficulty_timer == 0 && self.block_spawn_timer > 2 {
+                self.difficulty_timer = Self::MAX_DIFFICULTY_TIME;
+                self.max_block_spawn_time -= 1;
+            }
+
+            if let Some(block) = &mut self.blocks[0] {
+                match block[player_position] {
+                    Tile::Empty => (),
+                    Tile::Collectible => {
+                        block[player_position] = Tile::Empty;
+                    }
+                    Tile::Wall => {
+                        self.player_position = None;
+                        self.block_motion_timer = Self::GAME_OVER_TIME;
+                    }
+                }
+            }
+
+            self.draw_full_screen(lcd);
+        }
 
         None
     }
@@ -88,7 +155,11 @@ impl BlockCatch {
     }
 
     pub fn move_player_by(&mut self, lcd: &mut LCD, input: [i8; 2]) -> bool {
-        let mut new_position = self.player_position;
+        let Some(position) = self.player_position else {
+            return false;
+        };
+
+        let mut new_position = position;
 
         match input[0] {
             1 => new_position = new_position.with_column(1),
@@ -102,13 +173,23 @@ impl BlockCatch {
             _ => (),
         }
 
-        if new_position == self.player_position {
+        if new_position == position {
             return false;
         }
 
-        lcd.set_cursor(self.player_position);
+        if let Some(block) = &mut self.blocks[0] {
+            match &mut block[new_position] {
+                Tile::Empty => (),
+                tile @ Tile::Collectible => {
+                    *tile = Tile::Empty;
+                }
+                Tile::Wall => return false,
+            }
+        }
+
+        lcd.set_cursor(position);
         let marker = if let Some(marker_block) = self.first_block_index() {
-            self.blocks[marker_block as usize].unwrap()[self.player_position].marker_tile()
+            self.blocks[marker_block as usize].unwrap()[position].marker_tile()
         } else {
             b' '
         };
@@ -117,15 +198,19 @@ impl BlockCatch {
         lcd.set_cursor(new_position);
         lcd.write(Self::PLAYER_CHARACTER);
 
-        self.player_position = new_position;
+        self.player_position = Some(new_position);
 
         true
     }
 }
 
 impl Block {
-    pub fn draw_at(&self, lcd: &mut LCD, index: u8) {
-        self.draw_with_map_at(lcd, |tile, _| Some(tile as u8), index)
+    pub fn draw_at(&self, lcd: &mut LCD, index: u8, skip_position: Option<Position>) {
+        self.draw_with_map_at(
+            lcd,
+            |tile, position| (Some(position) != skip_position).then_some(tile as u8),
+            index,
+        )
     }
 
     pub fn draw_guide_at(&self, lcd: &mut LCD, index: u8, skip_position: Option<Position>) {
