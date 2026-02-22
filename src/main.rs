@@ -5,6 +5,7 @@
 pub mod game;
 pub mod input;
 pub mod lcd;
+pub mod rng;
 pub mod time;
 
 use arduino_hal::{
@@ -40,6 +41,9 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
     let mut serial = arduino_hal::default_serial!(dp, pins, 57600);
 
+    let mut adc = arduino_hal::Adc::new(dp.ADC, Default::default());
+    rng::set_seed(pins.a5.into_analog_input(&mut adc).analog_read(&mut adc) as u32);
+
     time::millis_init(dp.TC0);
     unsafe { interrupt::enable() };
 
@@ -74,6 +78,9 @@ fn main() -> ! {
 
     loop {
         let start = time::millis();
+
+        // Keep the rng from being too predictable
+        rng::rng();
 
         game.update(
             &mut lcd,
