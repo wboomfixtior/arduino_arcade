@@ -1,5 +1,9 @@
-use crate::{game::overworld::Overworld, LCD};
+use crate::{
+    game::{block_catch::BlockCatch, overworld::Overworld},
+    LCD,
+};
 
+pub mod block_catch;
 pub mod overworld;
 pub mod position;
 
@@ -23,6 +27,7 @@ impl Default for Game {
 
 pub enum GameMode {
     Overworld,
+    BlockCatch(BlockCatch),
 }
 
 impl Game {
@@ -35,9 +40,17 @@ impl Game {
     pub fn update(&mut self, lcd: &mut LCD, raw_input: [i8; 2]) {
         let soft_input = self.update_soft_input(raw_input);
 
-        match self.game_mode {
-            GameMode::Overworld => {
-                self.overworld.update(lcd, raw_input, soft_input);
+        let new_mode = match &mut self.game_mode {
+            GameMode::Overworld => self.overworld.update(lcd, raw_input, soft_input),
+            GameMode::BlockCatch(block_catch) => block_catch.update(lcd, raw_input),
+        };
+
+        if let Some(mode) = new_mode {
+            self.game_mode = mode;
+
+            match &mut self.game_mode {
+                GameMode::Overworld => self.overworld.start(lcd),
+                GameMode::BlockCatch(block_catch) => block_catch.start(lcd),
             }
         }
     }

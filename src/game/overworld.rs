@@ -1,4 +1,7 @@
-use crate::{game::position::Position, LCD};
+use crate::{
+    game::{block_catch::BlockCatch, position::Position, GameMode},
+    LCD,
+};
 
 #[rustfmt::skip]
 pub const ARCADE: [[&[u8]; 2]; 2] = [
@@ -37,8 +40,16 @@ impl Overworld {
         lcd.write(Self::PLAYER_CHARACTER);
     }
 
-    pub fn update(&mut self, lcd: &mut LCD, _raw_input: [i8; 2], soft_input: [i8; 2]) {
-        self.move_player_by(lcd, soft_input);
+    pub fn update(
+        &mut self,
+        lcd: &mut LCD,
+        _raw_input: [i8; 2],
+        soft_input: [i8; 2],
+    ) -> Option<GameMode> {
+        match self.move_player_by(lcd, soft_input) {
+            Some(b'1') => Some(GameMode::BlockCatch(BlockCatch::default())),
+            _ => None,
+        }
     }
 
     pub fn move_player_by(&mut self, lcd: &mut LCD, input: [i8; 2]) -> Option<u8> {
