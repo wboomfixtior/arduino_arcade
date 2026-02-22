@@ -40,7 +40,9 @@ pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u8; 8]; N] {
                         line <<= 1;
                         line |= 1;
                     }
-                    _ => break,
+                    b'|' => break,
+                    b'\n' => panic!("Line must end with a `|`"),
+                    _ => panic!("Line must contain only ` ` or `#` between the `|`s"),
                 }
 
                 i += 1;
