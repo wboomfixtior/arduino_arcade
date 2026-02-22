@@ -3,8 +3,8 @@
 #![feature(abi_avr_interrupt)]
 
 pub mod characters;
+pub mod game;
 pub mod lcd;
-pub mod overworld;
 pub mod time;
 
 use arduino_hal::hal::port::{PB2, PB3, PB4, PD2, PD3, PD4, PD5};
@@ -14,6 +14,7 @@ use ufmt::uWrite;
 
 use crate::{
     characters::CHARACTERS,
+    game::Game,
     lcd::{
         options::{FontSize, NumLines},
         LCDInfo,
@@ -63,14 +64,12 @@ fn main() -> ! {
 
     let mut deficit = 0u8;
 
-    let mut frames = 0u32;
+    let mut game = Game::default();
 
     loop {
         let start = time::millis();
 
-        lcd.set_cursor(0, 0);
-        lcd.print(frames / 60);
-        frames += 1;
+        game.update(&mut lcd);
 
         let frame_time = if deficit >= DEFICIT_NUMERATOR as u8 {
             FRAME_TIME_MILLISECONDS
