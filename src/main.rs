@@ -2,7 +2,6 @@
 #![no_main]
 #![feature(abi_avr_interrupt)]
 
-pub mod characters;
 pub mod game;
 pub mod lcd;
 pub mod time;
@@ -13,8 +12,8 @@ use panic_halt as _;
 use ufmt::uWrite;
 
 use crate::{
-    characters::CHARACTERS,
     game::Game,
+    lcd::characters::CHARACTERS,
     lcd::{
         options::{FontSize, NumLines},
         LCDInfo,

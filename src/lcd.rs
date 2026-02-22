@@ -1,5 +1,6 @@
 //! CREDIT: LiquidCrystal library for arduino <https://github.com/arduino-libraries/LiquidCrystal>
 
+pub mod characters;
 pub mod format;
 pub mod options;
 

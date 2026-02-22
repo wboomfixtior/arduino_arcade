@@ -1,5 +1,4 @@
-pub const CHARACTERS: [[u8; 8]; 8] =
-    parse_characters(include_bytes!("../resources/characters.txt"));
+pub const CHARACTERS: [[u8; 8]; 8] = parse_characters(include_bytes!("characters.txt"));
 
 pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u8; 8]; N] {
     let mut characters = [[0u8; 8]; N];
