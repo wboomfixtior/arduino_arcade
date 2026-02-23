@@ -33,11 +33,11 @@ Unopposite:
 |p ##  z#  xz   #|
 |   x   x   #  # |
 |   # xz# ### #  |
-Blank:
-|                |
-|p               |
-|                |
-|                |
+Haste:
+|   z     x #    |
+|p x#  #         |
+|   #  #z  # # x |
+|z     x        z|
 Blank:
 |                |
 |p               |
