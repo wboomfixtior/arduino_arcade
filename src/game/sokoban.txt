@@ -4,10 +4,10 @@ Start:
 |  x#       ##  z|
 |   #   #   #####|
 Doubles:
-|                |
-|p  # #          |
-|   xxz xx       |
-|   #z#   zz     |
+|               z|
+|p  # # x   z# x |
+|   xxz xx z## x |
+|   #z#   z###  z|
 Blank:
 |                |
 |p               |
