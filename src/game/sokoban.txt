@@ -3,7 +3,7 @@ Paths:
 |p  # #   x x x x|
 |   #x#x#        |
 |     x z        |
-Tension:
+Carbon copy:
 |################|
 |p  x        z   |
 |   z        x   |
