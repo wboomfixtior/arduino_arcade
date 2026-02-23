@@ -1,13 +1,18 @@
+use avr_device::interrupt;
+
 use crate::LCD;
 
 pub const CHARACTERS: [[u8; 8]; 16] = parse_characters(include_bytes!("characters.txt"));
 
 /// WARNING: This is very slow (~25ms)
 pub fn load_character_set(lcd: &mut LCD, character_set: u8) {
-    for i in 8 * character_set..8 * character_set + 8 {
-        let character = &CHARACTERS[i as usize];
-        lcd.create_character(i % 8, character);
-    }
+    // Pause time::millis()
+    interrupt::free(|_| {
+        for i in 8 * character_set..8 * character_set + 8 {
+            let character = &CHARACTERS[i as usize];
+            lcd.create_character(i % 8, character);
+        }
+    });
 }
 
 pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u8; 8]; N] {
