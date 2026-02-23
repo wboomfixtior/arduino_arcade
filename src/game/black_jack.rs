@@ -247,7 +247,7 @@ impl Deck<52> {
     }
 }
 
-/// INVARIANT: Must contain the a `Number`'s bits bitwise or'ed with a `Suit`'s bits
+/// INVARIANT: Must contain a `Number`'s bits bitwise or'ed with a `Suit`'s bits
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Card(NonZeroU8);
 
