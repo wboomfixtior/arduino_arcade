@@ -1,4 +1,13 @@
-pub const CHARACTERS: [[u8; 8]; 8] = parse_characters(include_bytes!("characters.txt"));
+use crate::LCD;
+
+pub const CHARACTERS: [[u8; 8]; 16] = parse_characters(include_bytes!("characters.txt"));
+
+pub fn load_character_set(lcd: &mut LCD, character_set: u8) {
+    for i in 8 * character_set..8 * character_set + 8 {
+        let character = &CHARACTERS[i as usize];
+        lcd.create_character(i % 8, character);
+    }
+}
 
 pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u8; 8]; N] {
     let mut characters = [[0u8; 8]; N];

@@ -8,6 +8,7 @@ use crate::{
         position::{GenericPosition, Position},
         GameMode,
     },
+    lcd::characters,
     LCD,
 };
 
@@ -33,6 +34,8 @@ impl Default for Sokoban {
 
 impl Sokoban {
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
+        characters::load_character_set(lcd, 1);
+
         for row in 0..2 {
             lcd.set_cursor(Position::new(0, row));
 
@@ -53,6 +56,7 @@ impl Sokoban {
         if self.num_boxes == 0
             || !moved && soft_input[0] == -1 && self.player_position.column() == 0
         {
+            characters::load_character_set(lcd, 0);
             Some(GameMode::Overworld)
         } else {
             None
@@ -152,13 +156,33 @@ pub enum Tile {
     BoxOnDestination,
 }
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum TileDisplay {
+    Empty,
+    Dither,
+    Full,
+}
+
 impl Tile {
     pub fn byte_of_pair(top: Self, bottom: Self) -> u8 {
-        match (top, bottom) {
-            (Tile::Empty, Tile::Empty) => b' ',
-            (_, Tile::Empty) => 5,
-            (Tile::Empty, _) => 6,
-            _ => 0xff,
+        match (top.display_kind(), bottom.display_kind()) {
+            (TileDisplay::Empty, TileDisplay::Empty) => b' ',
+            (TileDisplay::Empty, TileDisplay::Dither) => 0,
+            (TileDisplay::Empty, TileDisplay::Full) => 1,
+            (TileDisplay::Dither, TileDisplay::Empty) => 2,
+            (TileDisplay::Dither, TileDisplay::Dither) => 3,
+            (TileDisplay::Dither, TileDisplay::Full) => 4,
+            (TileDisplay::Full, TileDisplay::Empty) => 5,
+            (TileDisplay::Full, TileDisplay::Dither) => 6,
+            (TileDisplay::Full, TileDisplay::Full) => 7,
+        }
+    }
+
+    pub fn display_kind(self) -> TileDisplay {
+        match self {
+            Tile::Empty => TileDisplay::Empty,
+            Tile::Box | Tile::Destination => TileDisplay::Dither,
+            Tile::Wall | Tile::Player | Tile::BoxOnDestination => TileDisplay::Full,
         }
     }
 }

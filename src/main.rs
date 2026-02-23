@@ -19,8 +19,8 @@ use ufmt::uwriteln;
 
 use crate::{
     game::Game,
-    lcd::characters::CHARACTERS,
     lcd::{
+        characters,
         options::{FontSize, NumLines},
         LCDInfo,
     },
@@ -68,9 +68,7 @@ fn main() -> ! {
 
     lcd.begin();
 
-    for (i, character) in CHARACTERS.iter().enumerate() {
-        lcd.create_character(i as u8, character);
-    }
+    characters::load_character_set(&mut lcd, 0);
 
     let mut deficit = 0u8;
 
