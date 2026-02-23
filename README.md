@@ -1,6 +1,8 @@
 arduino_arcade
 ==============
 
+This project's skeleton was generated with this `cargo-generate` template: <https://github.com/Rahix/avr-hal-template.git>. 
+
 Rust project for the _Arduino Uno_.
 
 ## Build Instructions
