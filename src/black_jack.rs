@@ -1,7 +1,99 @@
-use core::{mem, num::NonZeroU8};
+use core::{
+    mem::{self, MaybeUninit},
+    num::NonZeroU8,
+    ops::Index,
+};
 
-use crate::{game::position::Position, LCD};
+use crate::{game::position::Position, rng, LCD};
 
+/// INVARIANT: All cards with an index less than self.len should be initialized
+#[derive(Clone)]
+pub struct Deck<const N: usize> {
+    len: u8,
+    /// SAFETY: Card is Copy so it doesn't need drop
+    cards: [MaybeUninit<Card>; N],
+}
+
+impl<const N: usize> Deck<N> {
+    pub const fn new() -> Self {
+        Self {
+            len: 0,
+            cards: [MaybeUninit::uninit(); N],
+        }
+    }
+
+    pub fn len(&self) -> u8 {
+        self.len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    #[must_use]
+    pub fn insert(&mut self, card: Card) -> Option<()> {
+        const {
+            assert!(N <= u8::MAX as usize);
+        }
+
+        if self.len >= N as u8 {
+            return None;
+        }
+
+        self.cards[self.len as usize] = MaybeUninit::new(card);
+        self.len += 1;
+
+        Some(())
+    }
+
+    #[must_use]
+    pub fn remove_random(&mut self) -> Option<Card> {
+        if self.is_empty() {
+            return None;
+        }
+
+        let i = (rng::rng() % self.len as u32) as usize;
+        self.len -= 1;
+
+        // SAFETY: Card was accessed from an index less than self.len
+        let card = unsafe { self.cards[i].assume_init() };
+        self.cards[i] = self.cards[self.len as usize];
+
+        Some(card)
+    }
+}
+
+impl<const N: usize> Default for Deck<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Deck<52> {
+    pub fn full() -> Self {
+        let mut deck = Self::new();
+
+        for suit_bits in 1..4 + 1 {
+            for number_bits in (0x00..0xd0 + 0x10).step_by(0x10) {
+                deck.insert(unsafe { Card::from_bits(number_bits | suit_bits) })
+                    .unwrap();
+            }
+        }
+
+        deck
+    }
+}
+
+impl<const N: usize> Index<u8> for Deck<N> {
+    type Output = Card;
+
+    fn index(&self, index: u8) -> &Self::Output {
+        assert!(index < N as u8);
+        unsafe { self.cards[index as usize].assume_init_ref() }
+    }
+}
+
+/// INVARIANT: Must contain the a `Number`'s bits bitwised or a `Suit`'s bits
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Card(NonZeroU8);
 
@@ -9,6 +101,10 @@ impl Card {
     pub fn new(number: Number, suit: Suit) -> Self {
         // SAFETY: `suit as u8` is always nonzero
         Self(unsafe { NonZeroU8::new_unchecked(number as u8 | suit as u8) })
+    }
+
+    pub unsafe fn from_bits(bits: u8) -> Self {
+        unsafe { Self(NonZeroU8::new_unchecked(bits)) }
     }
 
     pub fn number(self) -> Number {
