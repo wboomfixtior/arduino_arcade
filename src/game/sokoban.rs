@@ -252,6 +252,7 @@ pub const fn parse_level<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32; 
                             "Player position can only be defined once per level",
                         );
                         start_position = Some(LevelPosition::new(length as u8, line_number as u8));
+                        line <<= 2;
                     }
                     b'|' => break,
                     b'\n' => panic!("Line must end with a `|`"),
