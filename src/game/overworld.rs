@@ -1,5 +1,8 @@
 use crate::{
-    game::{black_jack::BlackJack, block_catch::BlockCatch, position::Position, GameMode},
+    game::{
+        black_jack::BlackJack, block_catch::BlockCatch, position::Position, sokoban::Sokoban,
+        GameMode,
+    },
     utils, LCD,
 };
 
@@ -54,7 +57,7 @@ impl Overworld {
     pub const PLAYER_CHARACTER: u8 = 0;
     pub const SCORE_SYMBOLS: [u8; 7] = [2, b'W', b'?', b'?', b'?', b'?', b'?'];
 
-    pub fn draw_full_screen(&mut self, lcd: &mut LCD, scores: &[u32; 7]) {
+    pub fn draw_full_screen(&mut self, lcd: &mut LCD, scores: &[u32; 6]) {
         self.print_screen(lcd);
 
         lcd.set_cursor(self.player_position);
@@ -68,13 +71,14 @@ impl Overworld {
         lcd: &mut LCD,
         _raw_input: [i8; 2],
         soft_input: [i8; 2],
-        scores: &[u32; 7],
+        scores: &[u32; 6],
     ) -> Option<GameMode> {
         let old_position = self.player_position;
 
         match self.move_player_by(lcd, soft_input, scores) {
             Some(b'1') => Some(GameMode::BlockCatch(BlockCatch::default())),
             Some(b'2') => Some(GameMode::BlackJack(BlackJack::default())),
+            Some(b'4') => Some(GameMode::Sokoban(Sokoban::default())),
             _ => 'outer: {
                 if self.player_position == old_position {
                     break 'outer None;
@@ -97,7 +101,7 @@ impl Overworld {
         }
     }
 
-    pub fn update_high_score_display(&mut self, lcd: &mut LCD, scores: &[u32; 7]) {
+    pub fn update_high_score_display(&mut self, lcd: &mut LCD, scores: &[u32; 6]) {
         let opposite_position = self
             .player_position
             .with_row(1 - self.player_position.row());
@@ -110,7 +114,7 @@ impl Overworld {
         }
     }
 
-    pub fn draw_score(&mut self, lcd: &mut LCD, scores: &[u32; 7], slot: u8) {
+    pub fn draw_score(&mut self, lcd: &mut LCD, scores: &[u32; 6], slot: u8) {
         let score = scores[slot as usize];
         if score == 0 {
             return;
@@ -141,7 +145,7 @@ impl Overworld {
         &mut self,
         lcd: &mut LCD,
         input: [i8; 2],
-        scores: &[u32; 7],
+        scores: &[u32; 6],
     ) -> Option<u8> {
         let mut new_position = self.player_position;
 
@@ -162,7 +166,7 @@ impl Overworld {
                     if self.screen > 0 {
                         // NOTE: We assume the target tile to be valid
                         self.screen -= 1;
-                        self.player_position = new_position.with_column(Position::MAX_COLUMN);
+                        self.player_position = new_position.with_column(Position::COLUMN_MASK);
                         self.draw_full_screen(lcd, scores);
                         return None;
                     }

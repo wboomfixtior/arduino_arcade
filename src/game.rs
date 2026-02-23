@@ -1,5 +1,7 @@
 use crate::{
-    game::{black_jack::BlackJack, block_catch::BlockCatch, overworld::Overworld},
+    game::{
+        black_jack::BlackJack, block_catch::BlockCatch, overworld::Overworld, sokoban::Sokoban,
+    },
     LCD,
 };
 
@@ -7,6 +9,7 @@ pub mod black_jack;
 pub mod block_catch;
 pub mod overworld;
 pub mod position;
+pub mod sokoban;
 
 pub struct Game {
     pub repeat_time: [i8; 2],
@@ -14,7 +17,7 @@ pub struct Game {
     pub overworld: Overworld,
     pub game_mode: GameMode,
 
-    pub high_scores: [u32; 7],
+    pub high_scores: [u32; 6],
 }
 
 impl Default for Game {
@@ -25,7 +28,7 @@ impl Default for Game {
             overworld: Overworld::default(),
             game_mode: GameMode::Overworld,
 
-            high_scores: [0; 7],
+            high_scores: [0; 6],
         }
     }
 }
@@ -34,6 +37,7 @@ pub enum GameMode {
     Overworld,
     BlockCatch(BlockCatch),
     BlackJack(BlackJack),
+    Sokoban(Sokoban),
 }
 
 impl GameMode {
@@ -42,6 +46,7 @@ impl GameMode {
             GameMode::Overworld => return None,
             GameMode::BlockCatch(_) => 0,
             GameMode::BlackJack(_) => 1,
+            GameMode::Sokoban(_) => return None,
         })
     }
 }
@@ -54,6 +59,7 @@ impl Game {
             GameMode::Overworld => self.overworld.draw_full_screen(lcd, &self.high_scores),
             GameMode::BlockCatch(block_catch) => block_catch.draw_full_screen(lcd),
             GameMode::BlackJack(black_jack) => black_jack.draw_full_screen(lcd),
+            GameMode::Sokoban(sokoban) => sokoban.draw_full_screen(lcd),
         }
     }
 
@@ -67,6 +73,7 @@ impl Game {
             }
             GameMode::BlockCatch(block_catch) => block_catch.update(lcd, raw_input),
             GameMode::BlackJack(black_jack) => black_jack.update(lcd, raw_input, soft_input),
+            GameMode::Sokoban(sokoban) => sokoban.update(lcd, raw_input, soft_input),
         };
 
         if let Some(mode) = new_mode {
@@ -122,6 +129,7 @@ impl Game {
                     0
                 }
             }
+            GameMode::Sokoban(_) => 0,
         }
     }
 }
