@@ -1,8 +1,11 @@
 use core::ops::{Index, IndexMut, Range};
 
+use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
+use ufmt::uwrite;
+
 use crate::{
     game::{position::Position, GameMode},
-    rng, LCD,
+    rng, utils, LCD,
 };
 
 pub struct BlockCatch {
@@ -38,7 +41,7 @@ impl BlockCatch {
     pub const MAX_DIFFICULTY_TIME: u8 = 60;
     pub const INITIAL_MAX_BLOCK_SPAWN_TIME: u8 = 5;
 
-    pub const GAME_OVER_TIME: u8 = 150;
+    pub const GAME_OVER_TIME: u8 = 60 * 4;
 }
 
 #[derive(Copy, Clone)]
@@ -95,6 +98,14 @@ impl BlockCatch {
             }
 
             first = false;
+        }
+
+        if self.player_position.is_none() {
+            lcd.set_cursor(Position::new(2, 0));
+            uwrite!(lcd.fmt(), "Score: {}", self.score).unwrap_infallible();
+            for _ in 7 + utils::num_digits(self.score)..16 {
+                lcd.write(b' ');
+            }
         }
     }
 
