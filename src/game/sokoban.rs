@@ -165,17 +165,10 @@ pub enum TileDisplay {
 
 impl Tile {
     pub fn byte_of_pair(top: Self, bottom: Self) -> u8 {
-        match (top.display_kind(), bottom.display_kind()) {
-            (TileDisplay::Empty, TileDisplay::Empty) => b' ',
-            (TileDisplay::Empty, TileDisplay::Dither) => 0,
-            (TileDisplay::Empty, TileDisplay::Full) => 1,
-            (TileDisplay::Dither, TileDisplay::Empty) => 2,
-            (TileDisplay::Dither, TileDisplay::Dither) => 3,
-            (TileDisplay::Dither, TileDisplay::Full) => 4,
-            (TileDisplay::Full, TileDisplay::Empty) => 5,
-            (TileDisplay::Full, TileDisplay::Dither) => 6,
-            (TileDisplay::Full, TileDisplay::Full) => 7,
-        }
+        let [top, bottom] = [top, bottom].map(Tile::display_kind);
+        (top as u8 * 3 + bottom as u8)
+            .checked_sub(1)
+            .unwrap_or(b' ')
     }
 
     pub fn display_kind(self) -> TileDisplay {
