@@ -66,7 +66,7 @@ impl IndexMut<Position> for Block {
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
 pub enum Tile {
-    Empty = b'_',
+    Empty = 0x05,
     Collectible = 0x02,
     Wall = 0xff,
 }
@@ -313,8 +313,8 @@ impl Block {
 impl Tile {
     pub fn marker_tile(self) -> u8 {
         match self {
-            Tile::Empty => b'_',
-            Tile::Collectible => b'.',
+            Tile::Empty => 0x05,
+            Tile::Collectible => 0x06,
             Tile::Wall => b' ',
         }
     }
