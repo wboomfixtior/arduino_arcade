@@ -138,12 +138,15 @@ impl BlockCatch {
                 self.max_block_spawn_time -= 1;
             }
 
+            let mut scored = false;
+
             if let Some(block) = &mut self.blocks[0] {
                 match block[player_position] {
                     Tile::Empty => (),
                     Tile::Collectible => {
                         block[player_position] = Tile::Empty;
                         self.score += 1;
+                        scored = true;
                     }
                     Tile::Wall => {
                         self.player_position = None;
@@ -153,6 +156,11 @@ impl BlockCatch {
             }
 
             self.draw_full_screen(lcd);
+
+            if scored {
+                lcd.set_cursor(player_position.with_column(2));
+                lcd.print_bytes(b"+1");
+            }
         }
 
         None
@@ -198,6 +206,8 @@ impl BlockCatch {
                 tile @ Tile::Collectible => {
                     *tile = Tile::Empty;
                     self.score += 1;
+                    lcd.set_cursor(new_position.with_column(2));
+                    lcd.print_bytes(b"+1");
                 }
                 Tile::Wall => return false,
             }
