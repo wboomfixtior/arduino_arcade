@@ -197,6 +197,7 @@ impl BlockCatch {
                 Tile::Empty => (),
                 tile @ Tile::Collectible => {
                     *tile = Tile::Empty;
+                    self.score += 1;
                 }
                 Tile::Wall => return false,
             }
