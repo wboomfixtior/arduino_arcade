@@ -3,7 +3,6 @@
 #![feature(abi_avr_interrupt)]
 
 pub mod game;
-pub mod input;
 pub mod lcd;
 pub mod rng;
 pub mod time;
@@ -61,18 +60,18 @@ fn main() -> ! {
         info: LCDInfo::new(16, NumLines::Two, FontSize::Dots5x8),
     };
 
-    let dpad_right = pins.d7.into_pull_up_input();
-    let dpad_up = pins.d9.into_pull_up_input();
-    let dpad_left = pins.d6.into_pull_up_input();
-    let dpad_down = pins.d8.into_pull_up_input();
-
     lcd.begin();
 
     characters::load_character_set(&mut lcd, 0);
 
     let mut deficit = 0u8;
 
-    let mut game = Game::default();
+    let mut game = Game::new(
+        pins.d7.into_pull_up_input(),
+        pins.d9.into_pull_up_input(),
+        pins.d6.into_pull_up_input(),
+        pins.d8.into_pull_up_input(),
+    );
     game.draw_full_screen(&mut lcd);
 
     loop {
@@ -81,10 +80,7 @@ fn main() -> ! {
         // Keep the rng from being too predictable
         rng::rng();
 
-        game.update(
-            &mut lcd,
-            input::read_dpad_input(&dpad_right, &dpad_up, &dpad_left, &dpad_down),
-        );
+        game.update(&mut lcd);
 
         let frame_time = if deficit >= DEFICIT_NUMERATOR as u8 {
             FRAME_TIME_MILLISECONDS
