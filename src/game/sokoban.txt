@@ -43,11 +43,11 @@ Divergence:
 |pxz             |
 | xz   ##xx # #  |
 |      z#        |
-Bleeding Edge:
-|   x z  #    z  |
-|p  z    xxxx    |
-|   z    #   #   |
-|   x z         z|
+Grid:
+|  xz    x zzx z |
+|p xz ##  x z x z|
+|  xz  x      x  |
+|     z# x z x z |
 Iteration:
 |  #   # z # z   |
 |p x x x   x   x |
@@ -58,18 +58,18 @@ Recursion:
 |p  x z z     x  |
 |    z x     x   |
 |       # # #   #|
-Blank:
-|                |
-|p               |
-|                |
-|                |
-Blank:
-|                |
-|p               |
-|                |
-|                |
-Blank:
-|                |
-|p               |
-|                |
-|                |
+Bleeding Edge:
+|   x z  #    z  |
+|p  z    xxxx    |
+|   z    #   #   |
+|   x z         z|
+Supergrid:
+|  z z z z z  x z|
+|px x x xxx #  x |
+|  xxx x    #    |
+| z z z z z     z|
+Finale:
+| z      z      z|
+|p  x xz x #  zxz|
+| z x#xz   xx    |
+|     xz         |
