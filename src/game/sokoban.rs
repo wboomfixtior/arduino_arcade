@@ -174,9 +174,7 @@ impl Level {
 
     pub fn update_all_tiles(&self, lcd: &mut LCD, mut condition: impl FnMut(Tile, Tile) -> bool) {
         for row in 0..2 {
-            lcd.set_cursor(Position::new(0, row));
-
-            let mut cursor_valid = true;
+            let mut cursor_valid = false;
 
             for column in 0..16 {
                 let position = Position::new(column, row);
