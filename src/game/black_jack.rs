@@ -108,13 +108,13 @@ impl BlackJack {
                         lcd.print_multiline(
                             Position::new(4, 0),
                             if self.player_points > 21 {
-                                "Player\nbusted!"
+                                "Player \nbusted! "
                             } else if self.dealer_points > 21 {
-                                "Dealer\nbusted!"
+                                "Dealer \nbusted! "
                             } else if self.player_won() {
-                                "Player\nwon!"
+                                "Player \nwon! "
                             } else {
-                                "Dealer\nwon!"
+                                "Dealer \nwon! "
                             },
                         );
                     }
