@@ -1,6 +1,6 @@
 use crate::LCD;
 
-pub const CHARACTERS: [[u8; 8]; 16] = parse_characters(include_bytes!("characters.txt"));
+pub const CHARACTERS: [[u8; 8]; 3 * 8] = parse_characters(include_bytes!("characters.txt"));
 
 /// WARNING: This is very slow (~25ms)
 pub fn load_character_set(lcd: &mut LCD, character_set: u8) {

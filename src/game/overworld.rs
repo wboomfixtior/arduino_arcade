@@ -1,7 +1,7 @@
 use crate::{
     game::{
         black_jack::BlackJack, block_catch::BlockCatch, position::Position, sokoban::Sokoban,
-        GameMode,
+        space_shooter::SpaceShooter, GameMode,
     },
     utils, LCD,
 };
@@ -78,6 +78,7 @@ impl Overworld {
         match self.move_player_by(lcd, soft_input, scores) {
             Some(b'1') => Some(GameMode::BlockCatch(BlockCatch::default())),
             Some(b'2') => Some(GameMode::BlackJack(BlackJack::default())),
+            Some(b'3') => Some(GameMode::SpaceShooter(SpaceShooter::default())),
             Some(b'4') => Some(GameMode::Sokoban(Sokoban::default())),
             _ => 'outer: {
                 if self.player_position == old_position {

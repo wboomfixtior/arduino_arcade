@@ -3,6 +3,7 @@ use embedded_hal::digital::InputPin;
 use crate::{
     game::{
         black_jack::BlackJack, block_catch::BlockCatch, overworld::Overworld, sokoban::Sokoban,
+        space_shooter::SpaceShooter,
     },
     LCD,
 };
@@ -12,6 +13,7 @@ pub mod block_catch;
 pub mod overworld;
 pub mod position;
 pub mod sokoban;
+pub mod space_shooter;
 
 pub struct Game<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> {
     pub repeat_time: [i8; 2],
@@ -31,6 +33,7 @@ pub enum GameMode {
     Overworld,
     BlockCatch(BlockCatch),
     BlackJack(BlackJack),
+    SpaceShooter(SpaceShooter),
     Sokoban(Sokoban),
 }
 
@@ -40,6 +43,7 @@ impl GameMode {
             GameMode::Overworld => return None,
             GameMode::BlockCatch(_) => 0,
             GameMode::BlackJack(_) => 1,
+            GameMode::SpaceShooter(_) => 2,
             GameMode::Sokoban(_) => return None,
         })
     }
@@ -53,7 +57,9 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             repeat_time: [0; 2],
 
             overworld: Overworld::default(),
-            game_mode: GameMode::Overworld,
+            // DEBUG:
+            // game_mode: GameMode::Overworld,
+            game_mode: GameMode::SpaceShooter(SpaceShooter::default()),
 
             high_scores: [0; 6],
 
@@ -69,6 +75,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::Overworld => self.overworld.draw_full_screen(lcd, &self.high_scores),
             GameMode::BlockCatch(block_catch) => block_catch.draw_full_screen(lcd),
             GameMode::BlackJack(black_jack) => black_jack.draw_full_screen(lcd),
+            GameMode::SpaceShooter(space_shooter) => space_shooter.draw_full_screen(lcd),
             GameMode::Sokoban(sokoban) => sokoban.draw_full_screen(lcd),
         }
     }
@@ -84,6 +91,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             }
             GameMode::BlockCatch(block_catch) => block_catch.update(lcd, raw_input),
             GameMode::BlackJack(black_jack) => black_jack.update(lcd, raw_input, soft_input),
+            GameMode::SpaceShooter(space_shooter) => space_shooter.update(lcd, raw_input),
             GameMode::Sokoban(sokoban) => sokoban.update(lcd, raw_input, soft_input),
         };
 
@@ -156,6 +164,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
                     0
                 }
             }
+            GameMode::SpaceShooter(space_shooter) => space_shooter.score,
             GameMode::Sokoban(_) => 0,
         }
     }
