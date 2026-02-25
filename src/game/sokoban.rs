@@ -37,6 +37,7 @@ impl Sokoban {
         if let Some(level) = &mut self.level {
             if let Some(_) = level.update(lcd, raw_input, soft_input) {
                 self.level = None;
+                self.level_select.selection_cooldown = LevelSelect::SELECTION_COOLDOWN;
                 self.level_select.draw_full_screen(lcd);
             }
 
@@ -68,6 +69,8 @@ impl Default for Sokoban {
 
 pub struct LevelSelect {
     pub player_position: Position,
+
+    pub selection_cooldown: u8,
 }
 
 pub enum LevelSelection {
@@ -79,12 +82,16 @@ impl Default for LevelSelect {
     fn default() -> Self {
         Self {
             player_position: Position::new(0, 1),
+
+            selection_cooldown: 0,
         }
     }
 }
 
 impl LevelSelect {
     pub const PLAYER_CHARACTER: u8 = 0;
+
+    pub const SELECTION_COOLDOWN: u8 = 60;
 
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         lcd.clear();
@@ -101,6 +108,10 @@ impl LevelSelect {
         _raw_input: [i8; 2],
         soft_input: [i8; 2],
     ) -> Option<LevelSelection> {
+        if self.selection_cooldown > 0 {
+            self.selection_cooldown -= 1;
+        }
+
         match soft_input[0] {
             input @ (1 | -1) => {
                 let (new_position, blocked) = self.player_position.nudge_column_overflowing(input);
@@ -122,7 +133,7 @@ impl LevelSelect {
             _ => (),
         }
 
-        if soft_input[1] == -1 {
+        if self.selection_cooldown == 0 && soft_input[1] == -1 {
             return Some(if self.player_position.column() > 0 {
                 LevelSelection::PlayLevel(self.player_position.column() - 1)
             } else {
