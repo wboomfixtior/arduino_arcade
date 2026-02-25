@@ -278,7 +278,7 @@ impl SpaceShooter {
             self.shoot_cooldown = Self::PLAYER_SHOOT_COOLDOWN.saturating_sub(1) as i8;
         }
 
-        let projectile = if self.triple_shot_cooldown > 0 {
+        let projectile = if self.triple_shot_cooldown > 0 || self.shoot_cooldown < 0 {
             Object::TripleProjectile
         } else {
             Object::Projectile
