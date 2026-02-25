@@ -1,13 +1,13 @@
+Paths:
+|   #z#z         |
+|p  # #    x     |
+|   #x#x#      z |
+|     x z        |
 Carbon Copy:
 |################|
 |p  x        z   |
 |   z        x   |
 |################|
-Paths:
-|   #z#z  z z z z|
-|p  # #   x x x x|
-|   #x#x#        |
-|     x z        |
 Switcharound:
 |   #       #    |
 |p x#    xxx  #  |
