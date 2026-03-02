@@ -382,8 +382,10 @@ impl SpaceShooter {
             Object::Health => {
                 if self.ship_health < Self::MAX_HEALTH {
                     self.ship_health += 1;
+                    self.ship_health_flash_time = Self::SHIP_HEALTH_FLASH_TIME;
+                } else {
+                    self.score += 1;
                 }
-                self.ship_health_flash_time = Self::SHIP_HEALTH_FLASH_TIME;
             }
             Object::BeamPowerUpCollectible | Object::TripleShotPowerUpCollectible => {
                 let position = self.ship_position.with_column(0);
