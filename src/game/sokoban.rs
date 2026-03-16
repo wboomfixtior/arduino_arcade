@@ -434,7 +434,11 @@ pub const fn parse_levels<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32;
         loop {
             let byte = file[i];
             if byte == b'\n' {
-                assert!(file[i - 1] == b':', "Line must end with a `:`");
+                if file[i - 1] == b'\r' {
+                    assert!(file[i - 2] == b':', "Line must end with a `:`");
+                } else {
+                    assert!(file[i - 1] == b':', "Line must end with a `:`");
+                }
 
                 i += 1;
                 break;
@@ -496,6 +500,10 @@ pub const fn parse_levels<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32;
 
             assert!(file[i] == b'|', "Line must end with a `|`");
             i += 1;
+            if i < file.len() && file[i] == b'\r' {
+                i += 1;
+            }
+
             assert!(
                 i >= file.len() || file[i] == b'\n',
                 "Line must end with a `|`"
