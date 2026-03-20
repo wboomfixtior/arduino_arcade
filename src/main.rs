@@ -66,6 +66,9 @@ fn main() -> ! {
 
     let mut deficit = 0u8;
 
+    let joystick_x = pins.a2.into_analog_input(&mut adc);
+    let joystick_y = pins.a3.into_analog_input(&mut adc);
+
     let mut game = Game::new(
         pins.d7.into_pull_up_input(),
         pins.d9.into_pull_up_input(),
@@ -79,6 +82,9 @@ fn main() -> ! {
 
         // Keep the rng from being too predictable
         rng::rng();
+
+        game.joystick_x.update(joystick_x.analog_read(&mut adc));
+        game.joystick_y.update(joystick_y.analog_read(&mut adc));
 
         game.update(&mut lcd);
 

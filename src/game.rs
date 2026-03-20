@@ -23,10 +23,13 @@ pub struct Game<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> {
 
     pub high_scores: [u32; 6],
 
-    pub dpad_right: Debouncer<Right>,
-    pub dpad_up: Debouncer<Up>,
-    pub dpad_left: Debouncer<Left>,
-    pub dpad_down: Debouncer<Down>,
+    pub dpad_right: PinDebouncer<Right>,
+    pub dpad_up: PinDebouncer<Up>,
+    pub dpad_left: PinDebouncer<Left>,
+    pub dpad_down: PinDebouncer<Down>,
+
+    pub joystick_x: AxisDebouncer,
+    pub joystick_y: AxisDebouncer,
 }
 
 pub enum GameMode {
@@ -61,10 +64,13 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
 
             high_scores: [0; 6],
 
-            dpad_right: Debouncer::new(dpad_right),
-            dpad_up: Debouncer::new(dpad_up),
-            dpad_left: Debouncer::new(dpad_left),
-            dpad_down: Debouncer::new(dpad_down),
+            dpad_right: PinDebouncer::new(dpad_right),
+            dpad_up: PinDebouncer::new(dpad_up),
+            dpad_left: PinDebouncer::new(dpad_left),
+            dpad_down: PinDebouncer::new(dpad_down),
+
+            joystick_x: AxisDebouncer::new(),
+            joystick_y: AxisDebouncer::new(),
         }
     }
 
@@ -108,17 +114,39 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
     }
 
     pub fn update_raw_input(&mut self) -> [i8; 2] {
-        [
+        let dpad = [
             self.dpad_right.update() as i8 - self.dpad_left.update() as i8,
             self.dpad_down.update() as i8 - self.dpad_up.update() as i8,
-        ]
+        ];
+
+        let joystick = [
+            self.joystick_x.positive.get_raw() as i8 - self.joystick_x.negative.get_raw() as i8,
+            self.joystick_y.positive.get_raw() as i8 - self.joystick_y.negative.get_raw() as i8,
+        ];
+
+        if dpad != [0, 0] {
+            dpad
+        } else {
+            joystick
+        }
     }
 
     pub fn get_debounced_input(&mut self) -> [bool; 2] {
-        [
+        let dpad = [
             self.dpad_right.is_held() || self.dpad_left.is_held(),
             self.dpad_down.is_held() || self.dpad_up.is_held(),
-        ]
+        ];
+
+        let joystick = [
+            self.joystick_x.positive.is_held() || self.joystick_x.negative.is_held(),
+            self.joystick_y.positive.is_held() || self.joystick_y.negative.is_held(),
+        ];
+
+        if dpad != [false, false] {
+            dpad
+        } else {
+            joystick
+        }
     }
 
     pub fn update_soft_input(&mut self, raw_input: [i8; 2]) -> [i8; 2] {
@@ -168,30 +196,83 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
     }
 }
 
-pub struct Debouncer<T: InputPin> {
+pub struct PinDebouncer<T: InputPin> {
     pub pin: T,
-    pub time_since_release: u8,
+    pub debouncer: Debouncer,
 }
 
-impl<T: InputPin> Debouncer<T> {
-    pub const FALLING_EDGE_TIME: u8 = 5;
-
+impl<T: InputPin> PinDebouncer<T> {
     pub fn new(pin: T) -> Self {
         Self {
             pin,
-            time_since_release: u8::MAX,
+            debouncer: Debouncer::new(),
         }
     }
 
     pub fn update(&mut self) -> bool {
         let raw_value = self.pin.is_low().unwrap();
+        self.debouncer.update(raw_value);
+
+        raw_value
+    }
+
+    pub fn is_held(&mut self) -> bool {
+        self.debouncer.is_held()
+    }
+}
+
+pub struct AxisDebouncer {
+    pub positive: Debouncer,
+    pub negative: Debouncer,
+}
+
+impl AxisDebouncer {
+    const MAX_RAW_VALUE: u16 = 1023;
+    const NEGATIVE_THRESHOLD: u16 = Self::MAX_RAW_VALUE * 1 / 4;
+    const POSITIVE_THRESHOLD: u16 = Self::MAX_RAW_VALUE * 3 / 4;
+
+    pub fn new() -> Self {
+        Self {
+            positive: Debouncer::new(),
+            negative: Debouncer::new(),
+        }
+    }
+
+    pub fn update(&mut self, raw_value: u16) {
+        let (negative, positive) = match raw_value {
+            ..Self::NEGATIVE_THRESHOLD => (true, false),
+            Self::POSITIVE_THRESHOLD.. => (false, true),
+            _ => (false, false),
+        };
+
+        self.negative.update(negative);
+        self.positive.update(positive);
+    }
+}
+
+pub struct Debouncer {
+    pub time_since_release: u8,
+}
+
+impl Debouncer {
+    pub const FALLING_EDGE_TIME: u8 = 5;
+
+    pub fn new() -> Self {
+        Self {
+            time_since_release: u8::MAX,
+        }
+    }
+
+    pub fn update(&mut self, raw_value: bool) {
         if raw_value {
             self.time_since_release = 0;
         } else {
             self.time_since_release = self.time_since_release.saturating_add(1);
         }
+    }
 
-        raw_value
+    pub fn get_raw(&mut self) -> bool {
+        self.time_since_release == 0
     }
 
     pub fn is_held(&mut self) -> bool {

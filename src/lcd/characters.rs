@@ -69,6 +69,10 @@ pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u8; 8]; N] {
 
             assert!(file[i] == b'|', "Line must end with a `|`");
             i += 1;
+            if i < file.len() && file[i] == b'\r' {
+                i += 1;
+            }
+
             assert!(
                 i >= file.len() || file[i] == b'\n',
                 "Line must end with a `|`"
