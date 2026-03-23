@@ -9,12 +9,12 @@ use crate::{
 #[rustfmt::skip]
 pub const ARCADE: [[&[u8]; 2]; 2] = [
     [
-        b"  \0 [1]     {3} ",
-        b"        (2)     ",
+        b"  \0 [1]     =3= ",
+        b"        (2)    \x7e",
     ],
     [
-        b"     \x7f5\x7e     \xff7\xff",
         b" :4:     <6>    ",
+        b"\x7f    {5}     \xff7\xff",
     ]
 ];
 
@@ -156,24 +156,29 @@ impl Overworld {
 
         match input[0] {
             input @ (1 | -1) => {
-                let (pos, edge) = new_position.nudge_column_overflowing(input);
-                if !edge {
-                    new_position = pos;
-                } else if input == 1 {
-                    if self.screen < ARCADE.len() as u8 - 1 {
+                let position = new_position.nudge_column_saturating(input);
+
+                if input == 1 {
+                    if self.screen < ARCADE.len() as u8 - 1
+                        && position.column() == Position::COLUMN_MASK
+                    {
                         // NOTE: We assume the target tile to be valid
                         self.screen += 1;
                         self.player_position = new_position.with_column(0);
                         self.draw_full_screen(lcd, scores);
                         return None;
+                    } else {
+                        new_position = position;
                     }
                 } else {
-                    if self.screen > 0 {
+                    if self.screen > 0 && position.column() == 0 {
                         // NOTE: We assume the target tile to be valid
                         self.screen -= 1;
                         self.player_position = new_position.with_column(Position::COLUMN_MASK);
                         self.draw_full_screen(lcd, scores);
                         return None;
+                    } else {
+                        new_position = position;
                     }
                 }
             }
@@ -191,7 +196,7 @@ impl Overworld {
         }
 
         let target = self.get_tile_at(new_position);
-        if target != b' ' {
+        if !b" \x7e\x7f".contains(&target) {
             return Some(target);
         }
 
