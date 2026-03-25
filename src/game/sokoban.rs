@@ -96,10 +96,14 @@ impl LevelSelect {
 
     pub const SELECTION_COOLDOWN: u8 = 3 * 60;
 
+    pub const BACKGROUND: [u8; 16] = *b"  level select  ";
+
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         lcd.clear();
         lcd.set_cursor(Position::new(0, 0));
         lcd.print_bytes(b"\x7fABCDEFGHIJKLMNO");
+        lcd.set_cursor(Position::new(0, 1));
+        lcd.print_bytes(&Self::BACKGROUND);
 
         lcd.set_cursor(self.player_position);
         lcd.write(Self::PLAYER_CHARACTER);
@@ -138,7 +142,15 @@ impl LevelSelect {
                         return Some(LevelSelection::Exit);
                     }
                 } else {
+                    let replacement_position =
+                        self.player_position.nudge_column_saturating(input * -1);
+                    lcd.set_cursor(replacement_position);
+                    lcd.write(Self::BACKGROUND[replacement_position.column() as usize]);
+
                     lcd.set_cursor(self.player_position);
+                    lcd.write(b' ');
+
+                    lcd.set_cursor(self.player_position.nudge_column_saturating(input * 2));
                     lcd.write(b' ');
 
                     lcd.set_cursor(new_position);
