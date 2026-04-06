@@ -27,7 +27,7 @@ pub struct LCD<RS: PinOps, RW: PinOps, E: PinOps, D4: PinOps, D5: PinOps, D6: Pi
 
     pub info: LCDInfo,
 }
-
+ 
 pub struct LCDInfo {
     num_lines: NumLines,
     row_offsets: [u8; 4],

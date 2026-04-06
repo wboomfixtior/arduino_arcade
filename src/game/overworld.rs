@@ -1,39 +1,22 @@
 use crate::{
     game::{
         black_jack::BlackJack, block_catch::BlockCatch, position::Position, sokoban::Sokoban,
-        space_shooter::SpaceShooter, GameMode,
+        space_shooter::SpaceShooter, note_beat::NoteBeat, GameMode,
     },
     utils, LCD,
 };
 
 #[rustfmt::skip]
-pub const ARCADE: [[&[u8]; 2]; 2] = [
+pub const ARCADE: [[[u8; 16]; 2]; 2] = [
     [
-        b"  \0 [1]     {3} ",
-        b"        (2)     ",
+        *b"  \x05 [1]     =3= ",
+        *b"        \x032\x03    \x7e",
     ],
     [
-        b"     \x7f5\x7e     \xff7\xff",
-        b" :4:     <6>    ",
+        *b" :4:     <6>    ",
+        *b"\x7f    {5}     \xff7\xff",
     ]
 ];
-
-const _: () = {
-    let mut i = 0;
-    while i < ARCADE.len() {
-        let mut j = 0;
-        while j < ARCADE[0].len() {
-            assert!(
-                ARCADE[i][j].len() == 16,
-                "The width of each line should match the screen's width",
-            );
-
-            j += 1;
-        }
-
-        i += 1;
-    }
-};
 
 pub struct Overworld {
     pub screen: u8,
@@ -80,6 +63,7 @@ impl Overworld {
             Some(b'2') => Some(GameMode::BlackJack(BlackJack::default())),
             Some(b'3') => Some(GameMode::SpaceShooter(SpaceShooter::default())),
             Some(b'4') => Some(GameMode::Sokoban(Sokoban::default())),
+            Some(b'5') => Some(GameMode::NoteBeat(NoteBeat::default())),
             _ => 'outer: {
                 if self.player_position == old_position {
                     break 'outer None;
@@ -156,24 +140,29 @@ impl Overworld {
 
         match input[0] {
             input @ (1 | -1) => {
-                let (pos, edge) = new_position.nudge_column_overflowing(input);
-                if !edge {
-                    new_position = pos;
-                } else if input == 1 {
-                    if self.screen < ARCADE.len() as u8 - 1 {
+                let position = new_position.nudge_column_saturating(input);
+
+                if input == 1 {
+                    if self.screen < ARCADE.len() as u8 - 1
+                        && position.column() == Position::COLUMN_MASK
+                    {
                         // NOTE: We assume the target tile to be valid
                         self.screen += 1;
                         self.player_position = new_position.with_column(0);
                         self.draw_full_screen(lcd, scores);
                         return None;
+                    } else {
+                        new_position = position;
                     }
                 } else {
-                    if self.screen > 0 {
+                    if self.screen > 0 && position.column() == 0 {
                         // NOTE: We assume the target tile to be valid
                         self.screen -= 1;
                         self.player_position = new_position.with_column(Position::COLUMN_MASK);
                         self.draw_full_screen(lcd, scores);
                         return None;
+                    } else {
+                        new_position = position;
                     }
                 }
             }
@@ -191,7 +180,7 @@ impl Overworld {
         }
 
         let target = self.get_tile_at(new_position);
-        if target != b' ' {
+        if !b" \x7e\x7f".contains(&target) {
             return Some(target);
         }
 

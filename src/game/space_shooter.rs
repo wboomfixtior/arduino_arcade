@@ -27,6 +27,8 @@ pub struct SpaceShooter {
     pub exit_countdown: u8,
 
     pub score: u32,
+
+    pub spawn_weights: SpawnWeights<6>,
 }
 
 impl Default for SpaceShooter {
@@ -49,6 +51,8 @@ impl Default for SpaceShooter {
             exit_countdown: Self::EXIT_COUNTDOWN,
 
             score: 0,
+
+            spawn_weights: SpawnWeights::new(Object::DEFAULT_WEIGHTS),
         }
     }
 }
@@ -345,7 +349,7 @@ impl SpaceShooter {
                 + (rng::rng() % (1 + Self::MAX_TIME - Self::MIN_TIME) as u32) as u8;
 
             let row = rng::rng() as u8 & 1;
-            let object = Object::random();
+            let object = Object::random(&mut self.spawn_weights);
             self.set_object(
                 lcd,
                 Position::new(self.objects[0].len() as u8 - 1, row),
@@ -353,10 +357,7 @@ impl SpaceShooter {
             );
 
             if (rng::rng() as u8) < Self::DOUBLE_SPAWN_CHANCE {
-                let mut object_2 = Object::random();
-                if object == object_2 {
-                    object_2 = Object::random();
-                }
+                let object_2 = Object::random(&mut self.spawn_weights);
                 self.set_object(
                     lcd,
                     Position::new(self.objects[0].len() as u8 - 1, 1 - row),
@@ -428,22 +429,37 @@ pub enum Object {
     Health = b'+',
     Point = 0x04,
     BeamPowerUpCollectible = 0x02,
-    BeamPowerUpStored = 0x0a, // Looks the same as 0x03
+    BeamPowerUpStored = 0x0a, // Looks the same as 0x02
     TripleShotPowerUpCollectible = 0x03,
     TripleShotPowerUpStored = 0x0b, // Looks the same as 0x03
 }
 
 impl Object {
-    pub fn random() -> Self {
-        match rng::rng() % 100 {
-            100.. => unreachable!(),
-            ..25 => Object::Asteroid,
-            ..75 => Object::Asteroid2X,
-            ..93 => Object::Point,
-            ..95 => Object::Health,
-            ..98 => Object::BeamPowerUpCollectible,
-            ..100 => Object::TripleShotPowerUpCollectible,
+    const OBJECTS: [Object; 6] = [
+        Object::Asteroid,
+        Object::Asteroid2X,
+        Object::Point,
+        Object::Health,
+        Object::BeamPowerUpCollectible,
+        Object::TripleShotPowerUpCollectible,
+    ];
+
+    const DEFAULT_WEIGHTS: [u16; 6] = [5000, 1500, 1500, 0, 0, 0];
+
+    const WEIGHT_INCREMENTS: [i16; 6] = [10, 4500, 1, 3, 3, 2];
+
+    pub fn random(weights: &mut SpawnWeights<{ Self::OBJECTS.len() }>) -> Self {
+        let index = weights.random().unwrap_or_default();
+
+        for i in 0..Self::OBJECTS.len() {
+            if i == index {
+                weights.set_weight(i, Self::DEFAULT_WEIGHTS[i]);
+            } else {
+                weights.nudge_weight(i, Self::WEIGHT_INCREMENTS[i]);
+            }
         }
+
+        Self::OBJECTS[index]
     }
 
     pub fn is_projectile(self) -> bool {
@@ -465,5 +481,43 @@ impl Object {
             self,
             Object::BeamPowerUpStored | Object::TripleShotPowerUpStored
         )
+    }
+}
+
+pub struct SpawnWeights<const N: usize> {
+    pub total: u32,
+    pub weights: [u16; N],
+}
+
+impl<const N: usize> SpawnWeights<N> {
+    pub fn new(weights: [u16; N]) -> Self {
+        Self {
+            total: weights.iter().map(|&x| x as u32).sum(),
+            weights,
+        }
+    }
+
+    pub fn random(&self) -> Option<usize> {
+        let mut random = rng::rng() % self.total;
+
+        for (i, &weight) in self.weights.iter().enumerate() {
+            if random < weight as u32 {
+                return Some(i);
+            } else {
+                random -= weight as u32;
+            }
+        }
+
+        None
+    }
+
+    pub fn set_weight(&mut self, index: usize, value: u16) {
+        self.total = self.total + value as u32 - self.weights[index] as u32;
+
+        self.weights[index] = value;
+    }
+
+    pub fn nudge_weight(&mut self, index: usize, offset: i16) {
+        self.set_weight(index, self.weights[index].saturating_add_signed(offset))
     }
 }
