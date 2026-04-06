@@ -1,7 +1,7 @@
 use crate::{
     game::{
         black_jack::BlackJack, block_catch::BlockCatch, position::Position, sokoban::Sokoban,
-        space_shooter::SpaceShooter, GameMode,
+        space_shooter::SpaceShooter, note_beat::NoteBeat, GameMode,
     },
     utils, LCD,
 };
@@ -63,6 +63,7 @@ impl Overworld {
             Some(b'2') => Some(GameMode::BlackJack(BlackJack::default())),
             Some(b'3') => Some(GameMode::SpaceShooter(SpaceShooter::default())),
             Some(b'4') => Some(GameMode::Sokoban(Sokoban::default())),
+            Some(b'5') => Some(GameMode::NoteBeat(NoteBeat::default())),
             _ => 'outer: {
                 if self.player_position == old_position {
                     break 'outer None;
